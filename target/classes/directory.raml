@@ -67,9 +67,18 @@ types:
   directories:
     type: directory[]
 
-/system/master-index/search/v1:
+/system/directory/v1/entries/filter:
   post:
-    description: Search master index entries
+    description: Search directory entries
+    queryParameters:
+      offset:
+        type: number
+        required: false
+        minimum: 0
+      limit:
+        type: number
+        required: false
+        minimum: 1
     body:
       application/json:
         type: nested_search_entries

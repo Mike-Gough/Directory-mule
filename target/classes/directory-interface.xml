@@ -4,22 +4,22 @@ http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/htt
 http://www.mulesoft.org/schema/mule/apikit http://www.mulesoft.org/schema/mule/apikit/current/mule-apikit.xsd
 http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
-    <http:listener-config name="master-index-httpListenerConfig" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration"/>
-    <apikit:config name="master-index-config" raml="master-index.raml" consoleEnabled="false" doc:name="Router"/>
-    <flow name="master-index-main" initialState="stopped">
-        <http:listener config-ref="master-index-httpListenerConfig" path="/api/*" doc:name="HTTP"/>
-        <apikit:router config-ref="master-index-config" doc:name="APIkit Router"/>
-        <exception-strategy ref="master-index-apiKitGlobalExceptionMapping" doc:name="Reference Exception Strategy"/>
+    <http:listener-config name="directory-httpListenerConfig" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration"/>
+    <apikit:config name="directory-config" raml="directory.raml" consoleEnabled="false" doc:name="Router"/>
+    <flow name="directory-main" initialState="started">
+        <http:listener config-ref="directory-httpListenerConfig" path="/*" doc:name="HTTP"/>
+        <apikit:router config-ref="directory-config" doc:name="APIkit Router"/>
+        <exception-strategy ref="directory-apiKitGlobalExceptionMapping" doc:name="Reference Exception Strategy"/>
     </flow>
-    <flow name="master-index-console" initialState="stopped">
-        <http:listener config-ref="master-index-httpListenerConfig" path="/console/*" doc:name="HTTP"/>
-        <apikit:console config-ref="master-index-config" doc:name="APIkit Console"/>
+    <flow name="directory-console" initialState="started">
+        <http:listener config-ref="directory-httpListenerConfig" path="/console/*" doc:name="HTTP"/>
+        <apikit:console config-ref="directory-config" doc:name="APIkit Console"/>
     </flow>
-    <flow name="post:/search/v1:application/json:master-index-config">
+    <flow name="post:/system/directory/v1/entries/filter:application/json:directory-config">
         <flow-ref name="search:/entries" doc:name="search:/entries"/>
 
     </flow>
-    <apikit:mapping-exception-strategy name="master-index-apiKitGlobalExceptionMapping">
+    <apikit:mapping-exception-strategy name="directory-apiKitGlobalExceptionMapping">
         <apikit:mapping statusCode="404">
             <apikit:exception value="org.mule.module.apikit.exception.NotFoundException" />
             <set-property propertyName="Content-Type" value="application/json" doc:name="Property"/>

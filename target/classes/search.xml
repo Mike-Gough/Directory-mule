@@ -140,7 +140,7 @@ otherwise []
 }]]></dw:set-variable>
   </dw:transform-message>
         <logger message="#[flowVars.mongoFilter]" level="TRACE" category="mongo-filter" doc:name="Logger (filter)"/>
-        <mongo:find-documents config-ref="Mongo_DB__Configuration" collection="directory" doc:name="Mongo DB"  query-ref="#[flowVars.mongoFilter]"/>
+        <mongo:find-documents config-ref="Mongo_DB__Configuration" collection="directory" doc:name="Mongo DB"  query-ref="#[flowVars.mongoFilter]" limit="#[message.inboundProperties.'http.query.params'.limit]" numToSkip="#[message.inboundProperties.'http.query.params'.offset]"/>
         <logger message="#[payload]" level="TRACE" category="mongo-results" doc:name="Logger (results)"/>
         <dw:transform-message doc:name="Transform Message (to json)">
             <dw:set-payload><![CDATA[%dw 1.0
