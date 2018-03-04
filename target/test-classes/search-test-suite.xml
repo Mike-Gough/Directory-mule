@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:mock="http://www.mulesoft.org/schema/mule/mock" xmlns:mongo="http://www.mulesoft.org/schema/mule/mongo" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:munit="http://www.mulesoft.org/schema/mule/munit" xmlns:spring="http://www.springframework.org/schema/beans" xmlns:core="http://www.mulesoft.org/schema/mule/core" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/mock http://www.mulesoft.org/schema/mule/mock/current/mule-mock.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/mongo http://www.mulesoft.org/schema/mule/mongo/current/mule-mongo.xsd">
+    <munit:config name="munit" doc:name="MUnit configuration"/>
+    <spring:beans>
+        <spring:import resource="classpath:search.xml"/>
+    </spring:beans>
+    <munit:before-test name="search-test-suiteBefore_Test" description="Before tests actions">
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+{
+	"_id": "0",
+	"kind": "person",
+	"version": "1.0.0",
+	"valid-from": 1520135920,
+	"valid-until": null,
+	"entries": [
+		{
+			"_id": "1",
+			"parent_id": null,
+			"key": "123",
+			"kind": "internal person identifier",
+			"valid-from": 1520135920,
+			"valid-until": null,
+			"origin": "comsas"
+		},
+		{
+			"_id": "2",
+			"parent_id": "1",
+			"key": "77929555",
+			"kind": "external interest identifier",
+			"valid-from": 1520135920,
+			"valid-until": null,
+			"origin": "comsas"
+		},
+		{
+			"_id": "3",
+			"parent_id": "2",
+			"key": "12345",
+			"kind": "internal interest identifier",
+			"valid-from": 1520135920,
+			"valid-until": null,
+			"origin": "comsas"
+		}
+	]
+}]]></dw:set-payload>
+        </dw:transform-message>
+        <mongo:insert-document config-ref="Mongo_DB__Configuration" collection="directory" document-ref="{&quot;_id&quot;:&quot;0&quot;,&quot;kind&quot;:&quot;person&quot;,&quot;version&quot;:&quot;1.0.0&quot;,&quot;valid-from&quot;:1520135920,&quot;valid-until&quot;:null,&quot;entries&quot;:[{&quot;_id&quot;:&quot;1&quot;,&quot;parent_id&quot;:null,&quot;key&quot;:&quot;123&quot;,&quot;kind&quot;:&quot;internal person identifier&quot;,&quot;valid-from&quot;:1520135920,&quot;valid-until&quot;:null,&quot;origin&quot;:&quot;comsas&quot;},{&quot;_id&quot;:&quot;2&quot;,&quot;parent_id&quot;:&quot;1&quot;,&quot;key&quot;:&quot;77929555&quot;,&quot;kind&quot;:&quot;external interest identifier&quot;,&quot;valid-from&quot;:1520135920,&quot;valid-until&quot;:null,&quot;origin&quot;:&quot;comsas&quot;},{&quot;_id&quot;:&quot;3&quot;,&quot;parent_id&quot;:&quot;2&quot;,&quot;key&quot;:&quot;12345&quot;,&quot;kind&quot;:&quot;internal interest identifier&quot;,&quot;valid-from&quot;:1520135920,&quot;valid-until&quot;:null,&quot;origin&quot;:&quot;comsas&quot;}]}" doc:name="Mongo DB"/>
+    </munit:before-test>
+    <munit:test name="search-test-suite-search:/entriesTest" description="Test">
+        <dw:transform-message doc:name="Transform Message  (payload)">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+[
+	{
+		key: "123",
+		kind: "internal person identifier"
+	},
+	[
+		{
+			key: "123",
+			kind: "internal person identifier"
+		},
+		{
+			key: "123",
+			kind: "internal person identifier"
+		}
+		
+	]
+]]]></dw:set-payload>
+        </dw:transform-message>
+        <flow-ref name="search:/entries" doc:name="Flow-ref to search:/entries"/>
+    </munit:test>
+</mule>
