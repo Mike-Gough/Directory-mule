@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+<mule xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:http="http://www.mulesoft.org/schema/mule/http"
 	xmlns:context="http://www.springframework.org/schema/context"
 	xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw"
 	xmlns:mongo="http://www.mulesoft.org/schema/mule/mongo"
@@ -14,9 +14,19 @@ http://www.mulesoft.org/schema/mule/mongo http://www.mulesoft.org/schema/mule/mo
 http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
 http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
-http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd">
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd">
 <context:property-placeholder location="mule-app.properties" />
     <mongo:config name="Mongo_DB__Configuration" database="master-index" doc:name="Mongo DB: Configuration"/>
+    <configuration doc:name="ObjectIdAsStringFunction">
+  <expression-language>
+   <global-functions>
+    def getObjectIdAsString(objectId) {
+    return ((org.bson.types.ObjectId) objectId).toString()
+}
+   </global-functions>
+  </expression-language>
+ </configuration>
     <flow name="search:/entries">
         <dw:transform-message doc:name="Transform Message (filter &amp; project)">
             <dw:set-variable variableName="mongoFilter"><![CDATA[%dw 1.0
@@ -148,7 +158,73 @@ otherwise []
 %var currentDateTime = (now as :number * 1000)
 ---
 payload map {
-	id: $."_id",
+	id: getObjectIdAsString($."_id"),
+	version: $.version,
+	kind: $.kind,
+	entries: $.entries 
+		filter (($.valid-from <= currentDateTime 
+				 when $.valid-from != null 
+				 otherwise true) and
+			    ($.valid-until >= currentDateTime  
+				 when $.valid-until != null 
+				 otherwise true))
+		map {
+			key: $.key,
+			kind: $.kind,
+			origin: $.origin
+		}
+}]]></dw:set-payload>
+        </dw:transform-message>
+    </flow>
+    <flow name="search:/document-by-id">
+        <expression-component doc:name="Expression (id)"><![CDATA[flowVars.id=new org.bson.types.ObjectId(flowVars.id)]]></expression-component>
+        <dw:transform-message doc:name="Transform Message (filter &amp; project)">
+            <dw:set-variable variableName="mongoFilter"><![CDATA[%dw 1.0
+%output application/java
+%var currentDateTime = (now as :number * 1000)
+---
+{
+  "\$and": [
+    {
+      "\$or": [
+        {
+          "valid-from": null
+        },
+        {
+          "valid-from": {
+            "\$lt": currentDateTime
+          }
+        }
+      ]
+    },
+    {
+      "\$or": [
+        {
+          "valid-until": null
+        },
+        {
+          "valid-until": {
+            "\$gt": currentDateTime
+          }
+        }
+      ]
+    },
+    {
+      "_id": flowVars.id
+    }
+  ]
+}]]></dw:set-variable>
+        </dw:transform-message>
+        <logger message="#[flowVars.mongoFilter]" level="TRACE" category="mongo-filter" doc:name="Logger (filter)"/>
+        <mongo:find-documents config-ref="Mongo_DB__Configuration" collection="directory" query-ref="#[flowVars.mongoFilter]" limit="#[message.inboundProperties.'http.query.params'.limit]" numToSkip="#[message.inboundProperties.'http.query.params'.offset]" doc:name="Mongo DB"/>
+        <logger message="#[payload]" level="TRACE" category="mongo-results" doc:name="Logger (results)"/>
+        <dw:transform-message doc:name="Transform Message (to json)">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+%var currentDateTime = (now as :number * 1000)
+---
+payload map {
+	id: getObjectIdAsString($."_id"),
 	version: $.version,
 	kind: $.kind,
 	entries: $.entries 
