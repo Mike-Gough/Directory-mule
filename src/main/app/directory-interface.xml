@@ -16,7 +16,7 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
         <apikit:console config-ref="directory-config" doc:name="APIkit Console" />
     </flow>
     <flow name="post:/system/directory/v1/entries/search:application/json:directory-config">
-        <flow-ref name="search:/entries" doc:name="search:/entries" />
+        <flow-ref name="search:/entries-simple" doc:name="search:/entries-simple" />
     </flow>
 
     <flow name="get:/system/directory/v1/entries/{id}:directory-config">

@@ -164,3 +164,41 @@ types:
                 ]
               }
             ]
+            
+/system/directory/v1/entries/upsert/customer:
+  post:
+    description: Upsert customer entries
+    queryParameters:
+      offset:
+        type: number
+        required: false
+        minimum: 0
+      limit:
+        type: number
+        required: false
+        minimum: 1
+    body:
+      application/json:
+        type: nested_search_entries
+        example: [
+          {
+            id: "A1234",
+            first-name: "John",
+            middle-name: "Doe",
+            last-name: "Smith",
+            birth-date: "01-01-2000",
+            tax-file-number: "111111111",
+            origin: "comsas"
+          }
+        ]
+    responses:
+      200:
+        body:
+          application/json:
+            example: [
+              {
+                id: "123",
+                is-successfull: true,
+                result: "entry already exists"
+              }
+            ]

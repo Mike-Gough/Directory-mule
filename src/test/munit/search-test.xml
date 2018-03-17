@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:mock="http://www.mulesoft.org/schema/mule/mock" xmlns:mongo="http://www.mulesoft.org/schema/mule/mongo" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:munit="http://www.mulesoft.org/schema/mule/munit" xmlns:spring="http://www.springframework.org/schema/beans" xmlns:core="http://www.mulesoft.org/schema/mule/core" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/mock http://www.mulesoft.org/schema/mule/mock/current/mule-mock.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/mongo http://www.mulesoft.org/schema/mule/mongo/current/mule-mongo.xsd">
+    <munit:config name="munit" doc:name="MUnit configuration"/>
+    <spring:beans>
+        <spring:import resource="classpath:search.xml"/>
+    </spring:beans>
+    <munit:before-test name="before-suite" description="Before tests actions">
+        <expression-component doc:name="Expression (id)"><![CDATA[flowVars.id = new org.bson.types.ObjectId("5aad9c4e1067e652750bc5b2")]]></expression-component>
+        <dw:transform-message doc:name="Transform Message (payload)">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+{
+	"_id": flowVars.id
+}]]></dw:set-payload>
+        </dw:transform-message>
+        <mongo:remove-documents config-ref="Mongo_DB__Configuration" collection="directory" doc:name="Mongo DB (remove)"/>
+        <dw:transform-message doc:name="Transform Message (payload)">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+{
+	"_id": flowVars.id,
+	"kind": "person",
+	"version": "1.0.0",
+	"valid-from": 1520135920,
+	"valid-until": null,
+	"entries": [
+		{
+			"_id": "1",
+			"parent_id": null,
+			"key": "123",
+			"kind": "internal person identifier",
+			"valid-from": 1520135920,
+			"valid-until": null,
+			"origin": "comsas"
+		},
+		{
+			"_id": "2",
+			"parent_id": "1",
+			"key": "77929555",
+			"kind": "external interest identifier",
+			"valid-from": 1520135920,
+			"valid-until": null,
+			"origin": "comsas"
+		},
+		{
+			"_id": "3",
+			"parent_id": "2",
+			"key": "12345",
+			"kind": "internal interest identifier",
+			"valid-from": 1520135920,
+			"valid-until": null,
+			"origin": "comsas"
+		}
+	]
+}]]></dw:set-payload>
+        </dw:transform-message>
+        <mongo:insert-document config-ref="Mongo_DB__Configuration" collection="directory"  doc:name="Mongo DB (insert)"/>
+    </munit:before-test>
+    <munit:test name="search-test:/entries-simple-one-or-criteria" description="Test">
+        <dw:transform-message doc:name="Transform Message  (payload)">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+[
+	{
+		key: "123",
+		kind: "internal person identifier"
+	}
+]]]></dw:set-payload>
+        </dw:transform-message>
+        <flow-ref name="search:/entries-simple" doc:name="search:/entries-simple"/>
+        <munit:assert-on-equals message="payload is not the expected size" expectedValue="#[1]" actualValue="#[dw('sizeOf payload')]" doc:name="Assert Equals (payload size)"/>
+        <munit:assert-on-equals message="document id does not match the expected value" expectedValue="5aad9c4e1067e652750bc5b2" actualValue="#[json:[0]/id]" doc:name="Assert Equals (document id)"/>
+    </munit:test>
+    <munit:test name="search-test:/entries-simple-one-and-criteria" description="Test">
+        <dw:transform-message doc:name="Transform Message  (payload)">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+[
+	[
+		{
+			key: "123",
+			kind: "internal person identifier"
+		},
+		{
+			key: "77929555",
+			kind: "external interest identifier"
+		}
+	]
+]]]></dw:set-payload>
+        </dw:transform-message>
+        <flow-ref name="search:/entries-simple" doc:name="search:/entries-simple"/>
+        <munit:assert-on-equals message="payload is not the expected size" expectedValue="#[1]" actualValue="#[dw('sizeOf payload')]" doc:name="Assert Equals (payload size)"/>
+        <munit:assert-on-equals message="document id does not match the expected value" expectedValue="5aad9c4e1067e652750bc5b2" actualValue="#[json:[0]/id]" doc:name="Assert Equals (document id)"/>
+    </munit:test>
+    <munit:after-suite name="after-suite" description="Ater suite actions">
+        <dw:transform-message doc:name="Transform Message (payload)">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+{
+	"_id": "0"
+}]]></dw:set-payload>
+        </dw:transform-message>
+        <mongo:remove-documents config-ref="Mongo_DB__Configuration" collection="directory" doc:name="Mongo DB (remove)"/>
+    </munit:after-suite>
+</mule>
