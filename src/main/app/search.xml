@@ -126,41 +126,6 @@ payload map {
             <dw:set-variable variableName="mongoFilter"><![CDATA[%dw 1.0
 %output application/json
 %var currentDateTime = (now as :number * 1000)
-%var andCriteria = payload filter ($ is :array)
-%var andFilter = 
-{
-  "\$and": [
-    {
-      "\$or": [
-        {
-          "valid-from": null
-        },
-        {
-          "valid-from": {
-            "\$lt": currentDateTime
-          }
-        }
-      ]
-    },
-    {
-      "\$or": [
-        {
-          "valid-until": null
-        },
-        {
-          "valid-until": {
-            "\$gt": currentDateTime
-          }
-        }
-      ]
-    },
-	{
-		"\$or": andCriteria map {
-			"\$and": $ 
-		}
-	}
-  ]
-}
 %var orCriteria = payload filter ($ is :object)
 %var orFilter = 
 {
@@ -194,15 +159,7 @@ payload map {
 	}
   ]
 }
-%var searchFilter = [andFilter, orFilter]
-when andCriteria != null 
-	and andCriteria != [] 
-	and orCriteria != null 
-	and orCriteria != []
-otherwise [andFilter]
-when andCriteria != null 
-	and andCriteria != []
-otherwise [orFilter]
+%var searchFilter = [orFilter]
 when orCriteria != null 
 	and orCriteria != []
 otherwise []

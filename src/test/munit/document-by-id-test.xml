@@ -71,12 +71,13 @@ http://www.mulesoft.org/schema/mule/mongo http://www.mulesoft.org/schema/mule/mo
         <munit:assert-on-equals message="document id does not match the expected value" expectedValue="5aad9c4e1067e652750bc5b2" actualValue="#[json:[0]/id]" doc:name="Assert Equals (document id)"/>
     </munit:test>
     <munit:after-suite name="after-suite" description="Ater suite actions">
+        <expression-component doc:name="Expression (id)"><![CDATA[flowVars.id = new org.bson.types.ObjectId("5aad9c4e1067e652750bc5b2")]]></expression-component>
         <dw:transform-message doc:name="Transform Message (payload)">
             <dw:set-payload><![CDATA[%dw 1.0
 %output application/java
 ---
 {
-	"_id": "0"
+	"_id": flowVars.id
 }]]></dw:set-payload>
         </dw:transform-message>
         <mongo:remove-documents config-ref="Mongo_DB__Configuration" collection="directory" doc:name="Mongo DB (remove)"/>

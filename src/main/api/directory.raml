@@ -21,10 +21,7 @@ types:
         minLength: 1
         
   search_entries:
-    type: search_entry[] | search_entry
-        
-  nested_search_entries:
-    type: search_entries[]
+    type: search_entry[]
     
   directory_entry:
     type: object
@@ -117,23 +114,16 @@ types:
         minimum: 1
     body:
       application/json:
-        type: nested_search_entries
+        type: search_entries
         example: [
           {
             key: "123",
             kind: "internal person identifier"
           },
-          [
-            {
-              key: "123",
-              kind: "internal person identifier"
-            },
-            {
-              key: "77929555",
-              kind: "external interest identifier"
-            }
-            
-          ]
+          {
+            key: "77929555",
+            kind: "external interest identifier"
+          }
         ]
     responses:
       200:
@@ -179,7 +169,6 @@ types:
         minimum: 1
     body:
       application/json:
-        type: nested_search_entries
         example: [
           {
             id: "A1234",
