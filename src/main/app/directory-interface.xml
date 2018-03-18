@@ -15,13 +15,15 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
         <http:listener config-ref="directory-httpListenerConfig" path="/console/*" doc:name="HTTP" />
         <apikit:console config-ref="directory-config" doc:name="APIkit Console" />
     </flow>
-    <flow name="post:/system/directory/v1/entries/search:application/json:directory-config">
-        <flow-ref name="search:/entries-simple" doc:name="search:/entries-simple" />
-    </flow>
-
     <flow name="get:/system/directory/v1/entries/{id}:directory-config">
-        <flow-ref name="search:/document-by-id" doc:name="search:/document-by-id"/>
+        <flow-ref name="document:/by-id" doc:name="search:/document-by-id"/>
 
+    </flow>
+    <flow name="post:/system/directory/v1/entries/search/simple:application/json:directory-config">
+        <flow-ref name="search-simple:/entries-by-value" doc:name="search:/entries-simple" />
+    </flow>
+    <flow name="post:/system/directory/v1/entries/search/detailed:application/json:directory-config">
+        <flow-ref name="search-detailed:/entries-by-value" doc:name="search:/entries-detailed"/>
     </flow>
     <apikit:mapping-exception-strategy name="directory-apiKitGlobalExceptionMapping">
         <apikit:mapping statusCode="404">

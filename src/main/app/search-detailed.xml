@@ -27,101 +27,7 @@ http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mul
    </global-functions>
   </expression-language>
  </configuration>
-    <sub-flow name="search:/document-by-id">
-        <expression-component doc:name="Expression (id)"><![CDATA[flowVars.id=new org.bson.types.ObjectId(flowVars.id)]]></expression-component>
-        <dw:transform-message doc:name="Transform Message (filter &amp; project)">
-            <dw:set-variable variableName="mongoFilter"><![CDATA[%dw 1.0
-%output application/java
-%var currentDateTime = (now as :number * 1000)
----
-{
-  "\$and": [
-    {
-      "\$or": [
-        {
-          "valid-from": null
-        },
-        {
-          "valid-from": {
-            "\$lt": currentDateTime
-          }
-        }
-      ]
-    },
-    {
-      "\$or": [
-        {
-          "valid-until": null
-        },
-        {
-          "valid-until": {
-            "\$gt": currentDateTime
-          }
-        }
-      ]
-    },
-    {
-      "_id": flowVars.id
-    }
-  ]
-}]]></dw:set-variable>
-        </dw:transform-message>
-        <logger message="#[flowVars.mongoFilter]" level="TRACE" category="mongo-filter" doc:name="Logger (filter)"/>
-        <mongo:find-documents config-ref="Mongo_DB__Configuration" collection="directory" query-ref="#[flowVars.mongoFilter]" doc:name="Mongo DB"/>
-        <logger message="#[payload]" level="TRACE" category="mongo-results" doc:name="Logger (results)"/>
-        <dw:transform-message doc:name="Transform Message (to json)">
-            <dw:set-payload><![CDATA[%dw 1.0
-%output application/json
-%var currentDateTime = (now as :number * 1000)
----
-payload map {
-	id: getObjectIdAsString($."_id"),
-	version: $.version,
-	kind: $.kind,
-	entries: $.entries 
-		filter (($.valid-from <= currentDateTime 
-				 when $.valid-from != null 
-				 otherwise true) and
-			    ($.valid-until >= currentDateTime  
-				 when $.valid-until != null 
-				 otherwise true))
-		map {
-			key: $.key,
-			kind: $.kind,
-			origin: $.origin
-		}
-}]]></dw:set-payload>
-        </dw:transform-message>
-    </sub-flow>
-    <sub-flow name="search:/entries-simple">
-        <flow-ref name="search:/entries-expanded" doc:name="search:/entries-expanded"/>
-        <dw:transform-message doc:name="Transform Message (to json)">
-            <dw:set-payload><![CDATA[%dw 1.0
-%output application/json
-%var currentDateTime = (now as :number * 1000)
----
-payload map {
-	id: $."_id"
-		when $."_id" is :string
-		otherwise getObjectIdAsString($."_id"),
-	version: $.version,
-	kind: $.kind,
-	entries: $.entries 
-		filter (($.valid-from <= currentDateTime 
-				 when $.valid-from != null 
-				 otherwise true) and
-			    ($.valid-until >= currentDateTime  
-				 when $.valid-until != null 
-				 otherwise true))
-		map {
-			key: $.key,
-			kind: $.kind,
-			origin: $.origin
-		}
-}]]></dw:set-payload>
-        </dw:transform-message>
-    </sub-flow>
-    <sub-flow name="search:/entries-expanded">
+    <sub-flow name="search-detailed:/entries-by-value">
         <dw:transform-message doc:name="Transform Message (filter &amp; project)">
             <dw:set-variable variableName="mongoFilter"><![CDATA[%dw 1.0
 %output application/json
@@ -217,5 +123,32 @@ when offset != null and offset is :number
 otherwise 0]]></dw:set-variable>
         </dw:transform-message>
         <mongo:find-documents config-ref="Mongo_DB__Configuration" collection="directory" doc:name="Mongo DB"  query-ref="#[flowVars.mongoFilter]" limit="#[flowVars.limit]" numToSkip="#[flowVars.offset]"/>
+        <dw:transform-message doc:name="Transform Message (to json)">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+%var currentDateTime = (now as :number * 1000)
+---
+payload map {
+	id: $."_id"
+		when $."_id" is :string
+		otherwise getObjectIdAsString($."_id"),
+	version: $.version,
+	kind: $.kind,
+	entries: $.entries 
+		filter (($.valid-from <= currentDateTime 
+				 when $.valid-from != null 
+				 otherwise true) and
+			    ($.valid-until >= currentDateTime  
+				 when $.valid-until != null 
+				 otherwise true))
+		 map {
+		 	id: $."_id",
+	        parent_id: $.parent_id,
+	        key: $.key,
+	        kind: $.kind,
+	        origin: $.origin
+		 }
+}]]></dw:set-payload>
+        </dw:transform-message>
     </sub-flow>
 </mule>

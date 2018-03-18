@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mongo="http://www.mulesoft.org/schema/mule/mongo"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" version="EE-3.9.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-current.xsd 
+http://www.mulesoft.org/schema/mule/mongo http://www.mulesoft.org/schema/mule/mongo/current/mule-mongo.xsd http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd">
+<context:property-placeholder location="mule-app.properties" />
+    <mongo:config name="Mongo_DB__Configuration" database="master-index" doc:name="Mongo DB: Configuration"/>
+    <configuration doc:name="ObjectIdAsStringFunction">
+  <expression-language>
+   <global-functions>
+    def getObjectIdAsString(objectId) {
+    return ((org.bson.types.ObjectId) objectId).toString()
+}
+   </global-functions>
+  </expression-language>
+ </configuration>
+</mule>

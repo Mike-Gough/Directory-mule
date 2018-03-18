@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw"
+	xmlns:mongo="http://www.mulesoft.org/schema/mule/mongo"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-current.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/mongo http://www.mulesoft.org/schema/mule/mongo/current/mule-mongo.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd">
+    <sub-flow name="document:/by-id">
+        <expression-component doc:name="Expression (id)"><![CDATA[flowVars.id=new org.bson.types.ObjectId(flowVars.id)]]></expression-component>
+        <dw:transform-message doc:name="Transform Message (filter &amp; project)">
+            <dw:set-variable variableName="mongoFilter"><![CDATA[%dw 1.0
+%output application/java
+%var currentDateTime = (now as :number * 1000)
+---
+{
+  "\$and": [
+    {
+      "\$or": [
+        {
+          "valid-from": null
+        },
+        {
+          "valid-from": {
+            "\$lt": currentDateTime
+          }
+        }
+      ]
+    },
+    {
+      "\$or": [
+        {
+          "valid-until": null
+        },
+        {
+          "valid-until": {
+            "\$gt": currentDateTime
+          }
+        }
+      ]
+    },
+    {
+      "_id": flowVars.id
+    }
+  ]
+}]]></dw:set-variable>
+        </dw:transform-message>
+        <logger message="#[flowVars.mongoFilter]" level="TRACE" category="mongo-filter" doc:name="Logger (filter)"/>
+        <mongo:find-documents config-ref="Mongo_DB__Configuration" collection="directory" query-ref="#[flowVars.mongoFilter]" doc:name="Mongo DB"/>
+        <logger message="#[payload]" level="TRACE" category="mongo-results" doc:name="Logger (results)"/>
+        <dw:transform-message doc:name="Transform Message (to json)">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+%var currentDateTime = (now as :number * 1000)
+---
+payload map {
+	id: getObjectIdAsString($."_id"),
+	version: $.version,
+	kind: $.kind,
+	entries: $.entries 
+		filter (($.valid-from <= currentDateTime 
+				 when $.valid-from != null 
+				 otherwise true) and
+			    ($.valid-until >= currentDateTime  
+				 when $.valid-until != null 
+				 otherwise true))
+		map {
+			key: $.key,
+			kind: $.kind,
+			origin: $.origin
+		}
+}]]></dw:set-payload>
+        </dw:transform-message>
+    </sub-flow>
+</mule>

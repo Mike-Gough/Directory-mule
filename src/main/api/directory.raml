@@ -1,7 +1,7 @@
 #%RAML 1.0
-title: master-index api
+title: directory api
 version: 1
-baseUri: https://system/master-index/entries{version}
+baseUri: https://system/directory/{version}
 
 types:
   search_entry:
@@ -100,7 +100,7 @@ types:
               }
             ]
 
-/system/directory/v1/entries/search:
+/system/directory/v1/entries/search/simple:
   post:
     description: Search directory entries
     queryParameters:
@@ -147,6 +147,67 @@ types:
                     "origin": "comsas"
                   },
                   {
+                    "key": "12345",
+                    "kind": "internal interest identifier",
+                    "origin": "comsas"
+                  }
+                ]
+              }
+            ]
+            
+/system/directory/v1/entries/search/detailed:
+  post:
+    description: Search directory entries
+    queryParameters:
+      offset:
+        type: number
+        required: false
+        minimum: 0
+      limit:
+        type: number
+        required: false
+        minimum: 1
+    body:
+      application/json:
+        type: search_entries
+        example: [
+          {
+            key: "123",
+            kind: "internal person identifier"
+          },
+          {
+            key: "77929555",
+            kind: "external interest identifier"
+          }
+        ]
+    responses:
+      200:
+        body:
+          application/json:
+            type: directories
+            example: [
+              {
+                "id": "5aad9c4e1067e652750bc5b2",
+                "version": "1.0.0",
+                "kind": "person",
+                "entries": [
+                  {
+                    "id": "1",
+                    "parent_id": null,
+                    "key": "123",
+                    "kind": "internal person identifier",
+                    "origin": "comsas"
+                  },
+                  {
+                    "id": "2",
+                    "parent_id": "1",
+                    "key": "77929555",
+                    "kind": "external interest identifier",
+                    "origin": "comsas"
+                  },
+                  {
+                    "id": "3",
+                    "parent_id": "2",
                     "key": "12345",
                     "kind": "internal interest identifier",
                     "origin": "comsas"

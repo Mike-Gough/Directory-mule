@@ -8,7 +8,8 @@ http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee
 http://www.mulesoft.org/schema/mule/mongo http://www.mulesoft.org/schema/mule/mongo/current/mule-mongo.xsd">
     <munit:config name="munit" doc:name="MUnit configuration"/>
     <spring:beans>
-        <spring:import resource="classpath:search.xml"/>
+        <spring:import resource="classpath:global-config.xml"/>
+        <spring:import resource="classpath:search-detailed.xml"/>
     </spring:beans>
     <munit:before-test name="before-suite" description="Before tests actions">
         <expression-component doc:name="Expression (id)"><![CDATA[flowVars.id = new org.bson.types.ObjectId("5aad9c4e1067e652750bc5b2")]]></expression-component>
@@ -76,7 +77,7 @@ http://www.mulesoft.org/schema/mule/mongo http://www.mulesoft.org/schema/mule/mo
 	}
 ]]]></dw:set-payload>
         </dw:transform-message>
-        <flow-ref name="search:/entries-simple" doc:name="search:/entries-simple"/>
+        <flow-ref name="search-detailed:/entries-by-value" doc:name="search-simple:/entries-by-value"/>
         <munit:assert-on-equals message="payload is not the expected size" expectedValue="#[1]" actualValue="#[dw('sizeOf payload')]" doc:name="Assert Equals (payload size)"/>
         <munit:assert-on-equals message="document id does not match the expected value" expectedValue="5aad9c4e1067e652750bc5b2" actualValue="#[json:[0]/id]" doc:name="Assert Equals (document id)"/>
     </munit:test>
